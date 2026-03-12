@@ -10,13 +10,10 @@ import com.javabuilder.chatapp.repository.RoleRepository;
 import com.javabuilder.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import static com.javabuilder.chatapp.constant.AppConstant.USER_ROLE;
-
 
 @Service
 @RequiredArgsConstructor
