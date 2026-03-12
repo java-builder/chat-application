@@ -25,14 +25,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = Exception.class)
     public CreateUserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         User user = User.builder()
                 .email(request.getEmail())
                 .username(request.getUsername())
