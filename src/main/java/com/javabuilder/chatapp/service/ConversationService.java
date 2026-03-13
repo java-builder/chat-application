@@ -2,7 +2,9 @@ package com.javabuilder.chatapp.service;
 
 import com.javabuilder.chatapp.common.ConversationType;
 import com.javabuilder.chatapp.dto.request.CreateConversationRequest;
+import com.javabuilder.chatapp.dto.response.ConversationDetailResponse;
 import com.javabuilder.chatapp.dto.response.CreateConversationResponse;
+import com.javabuilder.chatapp.dto.response.PageResponse;
 import com.javabuilder.chatapp.entity.Conversation;
 import com.javabuilder.chatapp.entity.User;
 import com.javabuilder.chatapp.exception.AppException;
@@ -11,6 +13,9 @@ import com.javabuilder.chatapp.mapper.ConversationMapper;
 import com.javabuilder.chatapp.repository.ConversationRepository;
 import com.javabuilder.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -76,6 +81,25 @@ public class ConversationService {
         conversationRepository.save(conversation);
 
         return ConversationMapper.toConversationResponse(creatorId, conversation);
+    }
+
+    public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1 , size);
+
+        Page<Conversation> conversationPage = conversationRepository.findAllByUserId(userId, pageable);
+        List<Conversation> conversations = conversationPage.getContent();
+
+        List<ConversationDetailResponse> responses = conversations.stream()
+                .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
+                .toList();
+
+        return PageResponse.<ConversationDetailResponse>builder()
+                .currentPage(page)
+                .pageSize(pageable.getPageSize())
+                .totalPages(conversationPage.getTotalPages())
+                .totalElements(conversationPage.getTotalElements())
+                .content(responses)
+                .build();
     }
 
 }
