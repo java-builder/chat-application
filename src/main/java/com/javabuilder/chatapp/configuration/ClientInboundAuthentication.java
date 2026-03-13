@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.javabuilder.chatapp.constant.AppConstant.AUTHORITIES;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j(topic = "CLIENT-INBOUND-AUTHENTICATION")
@@ -43,7 +45,7 @@ public class ClientInboundAuthentication implements ChannelInterceptor {
                 try {
                     Jwt jwt = jwtDecoder.decode(token);
                     String userId = jwt.getSubject();
-                    List<GrantedAuthority> authorities = Optional.ofNullable(jwt.getClaimAsStringList("roles"))
+                    List<GrantedAuthority> authorities = Optional.ofNullable(jwt.getClaimAsStringList(AUTHORITIES))
                             .orElse(Collections.emptyList())
                             .stream()
                             .map(SimpleGrantedAuthority::new)
