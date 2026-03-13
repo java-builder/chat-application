@@ -16,6 +16,11 @@ public enum ErrorCode {
     USER_EXISTED(400, "User already existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
 
+    PARTICIPANT_NOT_FOUND(404, "One or more participants not found", HttpStatus.NOT_FOUND),
+    INVALID_PARTICIPANT_COUNT(400, "Private conversation requires exactly 2 participants", HttpStatus.BAD_REQUEST),
+    CONVERSATION_NAME_REQUIRED(400, "Conversation name is required", HttpStatus.BAD_REQUEST),
+    GROUP_CONVERSATION_MINIMUM_THREE_PARTICIPANTS(400, "A group conversation must have at least three participants", HttpStatus.BAD_REQUEST)
+
     ;
 
     private final int code;
