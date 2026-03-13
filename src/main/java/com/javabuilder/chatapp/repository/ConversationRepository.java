@@ -17,7 +17,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
     Optional<Conversation> findByParticipantHash(String participantHash);
 
     @EntityGraph(attributePaths = {"participants", "participants.user"})
-    @Query("SELECT DISTINCT c FROM Conversation c JOIN c.participants p WHERE p.user.id = :userId")
+    @Query("SELECT DISTINCT c FROM Conversation c JOIN c.participants p WHERE p.user.id = :userId ORDER BY c.lastMessageTime DESC NULLS LAST")
     Page<Conversation> findAllByUserId(@Param("userId") String userId, Pageable pageable);
 
 }
