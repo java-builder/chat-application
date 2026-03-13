@@ -11,9 +11,9 @@ import java.util.List;
 @Getter
 @Setter
 @Builder(toBuilder = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChatMessageResponse implements Serializable {
     private String id;
     private String tempId;

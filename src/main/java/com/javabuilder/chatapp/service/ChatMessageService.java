@@ -3,6 +3,7 @@ package com.javabuilder.chatapp.service;
 import com.javabuilder.chatapp.dto.request.ChatMessageRequest;
 import com.javabuilder.chatapp.dto.response.ChatMessageResponse;
 import com.javabuilder.chatapp.dto.response.MessageMediaResponse;
+import com.javabuilder.chatapp.dto.response.PageResponse;
 import com.javabuilder.chatapp.entity.ChatMessage;
 import com.javabuilder.chatapp.entity.Conversation;
 import com.javabuilder.chatapp.entity.MessageMedia;
@@ -13,9 +14,14 @@ import com.javabuilder.chatapp.repository.ChatMessageRepository;
 import com.javabuilder.chatapp.repository.ConversationRepository;
 import com.javabuilder.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
 @Service
@@ -76,6 +82,50 @@ public class ChatMessageService {
                                 .uploadedAt(messageMedia.getUploadedAt())
                                 .build())
                         .toList())
+                .build();
+    }
+
+    public PageResponse<ChatMessageResponse> getMessagesByConversationId(String conversationId, int page, int size) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication == null) throw new AppException(ErrorCode.UNAUTHORIZED);
+
+        String userId = authentication.getName();
+
+        Conversation conversation = conversationRepository.findByIdAndMember(conversationId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_CONVERSATION_MEMBER));
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "sentAt"));
+        Page<ChatMessage> chatMessagePage = chatMessageRepository.findByConversationId(conversationId, pageable);
+
+        List<ChatMessage> messages = chatMessagePage.getContent();
+
+        List<ChatMessageResponse> responses = messages.stream()
+                .map(message -> ChatMessageResponse.builder()
+                        .id(message.getId())
+                        .conversationId(conversation.getId())
+                        .conversationAvatar(conversation.getConversationAvatar())
+                        .senderId(message.getSender().getId())
+                        .senderName(message.getSender().getUsername())
+                        .content(message.getContent())
+                        .messageType(message.getMessageType())
+                        .messageMedia(message.getMediaFiles().stream()
+                                .map(messageMedia -> MessageMediaResponse.builder()
+                                        .id(messageMedia.getId())
+                                        .fileName(messageMedia.getFileName())
+                                        .fileType(messageMedia.getFileType())
+                                        .thumbnailUrl(messageMedia.getThumbnailUrl())
+                                        .uploadedAt(messageMedia.getUploadedAt())
+                                        .build())
+                                .toList())
+                        .build())
+                .toList();
+
+        return PageResponse.<ChatMessageResponse>builder()
+                .currentPage(page)
+                .pageSize(pageable.getPageSize())
+                .totalPages(chatMessagePage.getTotalPages())
+                .totalElements(chatMessagePage.getTotalElements())
+                .content(responses)
                 .build();
     }
 

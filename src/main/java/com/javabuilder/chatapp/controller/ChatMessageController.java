@@ -3,16 +3,14 @@ package com.javabuilder.chatapp.controller;
 import com.javabuilder.chatapp.dto.request.ChatMessageRequest;
 import com.javabuilder.chatapp.dto.response.ApiResponse;
 import com.javabuilder.chatapp.dto.response.ChatMessageResponse;
+import com.javabuilder.chatapp.dto.response.PageResponse;
 import com.javabuilder.chatapp.service.ChatMessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,4 +31,17 @@ public class ChatMessageController {
                 .build();
     }
 
+    @GetMapping("/conversations/{conversationId}/messages")
+    ApiResponse<PageResponse<ChatMessageResponse>> getMessages(
+            @PathVariable String conversationId,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int size
+    ) {
+        var data = chatMessageService.getMessagesByConversationId(conversationId, page, size);
+        return ApiResponse.<PageResponse<ChatMessageResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Messages retrieved successfully")
+                .data(data)
+                .build();
+    }
 }
