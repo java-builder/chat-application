@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, String> {
 
-    @EntityGraph(attributePaths = {"sender", "mediaFiles"})
+    @EntityGraph(attributePaths = {"sender"})
     Page<ChatMessage> findByConversationId(String conversationId, Pageable pageable);
 }
