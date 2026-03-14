@@ -69,7 +69,6 @@ public class ChatMessageService {
                 .messageType(message.getMessageType())
                 .messageMedia(message.getMediaFiles().stream()
                         .map(messageMedia -> MessageMediaResponse.builder()
-                                .id(messageMedia.getId())
                                 .fileName(messageMedia.getFileName())
                                 .fileType(messageMedia.getFileType())
                                 .thumbnailUrl(messageMedia.getThumbnailUrl())
