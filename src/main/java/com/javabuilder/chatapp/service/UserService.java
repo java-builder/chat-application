@@ -2,6 +2,7 @@ package com.javabuilder.chatapp.service;
 
 import com.javabuilder.chatapp.dto.request.CreateUserRequest;
 import com.javabuilder.chatapp.dto.response.CreateUserResponse;
+import com.javabuilder.chatapp.dto.response.UserDetailResponse;
 import com.javabuilder.chatapp.entity.Role;
 import com.javabuilder.chatapp.entity.User;
 import com.javabuilder.chatapp.exception.AppException;
@@ -47,6 +48,16 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build();
+    }
+
+    public UserDetailResponse myInfo(String userId) {
+        return userRepository.findById(userId)
+                .map(user -> UserDetailResponse.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .username(user.getUsername())
+                        .build())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
 }

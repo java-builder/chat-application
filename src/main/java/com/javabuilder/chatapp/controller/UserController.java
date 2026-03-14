@@ -3,10 +3,13 @@ package com.javabuilder.chatapp.controller;
 import com.javabuilder.chatapp.dto.request.CreateUserRequest;
 import com.javabuilder.chatapp.dto.response.ApiResponse;
 import com.javabuilder.chatapp.dto.response.CreateUserResponse;
+import com.javabuilder.chatapp.dto.response.UserDetailResponse;
 import com.javabuilder.chatapp.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,4 +30,15 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping
+    public ApiResponse<UserDetailResponse> myInfo(@AuthenticationPrincipal Jwt jwt) {
+        var userId = jwt.getSubject();
+        var data = userService.myInfo(userId);
+
+        return ApiResponse.<UserDetailResponse>builder()
+                .code(HttpStatus.OK.value())
+                .message("User info retrieved successfully")
+                .data(data)
+                .build();
+    }
 }
