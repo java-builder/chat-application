@@ -3,6 +3,9 @@ package com.javabuilder.chatapp.entity;
 import com.javabuilder.chatapp.common.MessageType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +42,8 @@ public class ChatMessage {
     @Builder.Default
     private LocalDateTime sentAt = LocalDateTime.now();
 
-    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "media_files", columnDefinition = "json")
     @Builder.Default
     private List<MessageMedia> mediaFiles = new ArrayList<>();
 }
