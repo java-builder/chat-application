@@ -3,6 +3,7 @@ package com.javabuilder.chatapp.controller;
 import com.javabuilder.chatapp.dto.request.CreateUserRequest;
 import com.javabuilder.chatapp.dto.response.ApiResponse;
 import com.javabuilder.chatapp.dto.response.CreateUserResponse;
+import com.javabuilder.chatapp.dto.response.PageResponse;
 import com.javabuilder.chatapp.dto.response.UserDetailResponse;
 import com.javabuilder.chatapp.service.UserService;
 import jakarta.validation.Valid;
@@ -41,4 +42,19 @@ public class UserController {
                 .data(data)
                 .build();
     }
+
+    @GetMapping("/search")
+    public ApiResponse<PageResponse<UserDetailResponse>> searchUser(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "5") int size,
+            @RequestParam(required = false) String keyword
+    ) {
+        var data = userService.searchUsers(keyword, page, size);
+        return ApiResponse.<PageResponse<UserDetailResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Users retrieved successfully")
+                .data(data)
+                .build();
+    }
+
 }

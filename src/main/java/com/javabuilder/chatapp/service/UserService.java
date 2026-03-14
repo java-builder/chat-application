@@ -2,6 +2,7 @@ package com.javabuilder.chatapp.service;
 
 import com.javabuilder.chatapp.dto.request.CreateUserRequest;
 import com.javabuilder.chatapp.dto.response.CreateUserResponse;
+import com.javabuilder.chatapp.dto.response.PageResponse;
 import com.javabuilder.chatapp.dto.response.UserDetailResponse;
 import com.javabuilder.chatapp.entity.Role;
 import com.javabuilder.chatapp.entity.User;
@@ -11,9 +12,17 @@ import com.javabuilder.chatapp.repository.RoleRepository;
 import com.javabuilder.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
 import static com.javabuilder.chatapp.constant.AppConstant.USER_ROLE;
 
 @Service
@@ -58,6 +67,35 @@ public class UserService {
                         .username(user.getUsername())
                         .build())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public PageResponse<UserDetailResponse> searchUsers(String keyword, int page, int size) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication == null) throw new AppException(ErrorCode.UNAUTHORIZED);
+
+        String userId = authentication.getName();
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        Page<User> userPage = userRepository.searchUsers(keyword, pageable);
+
+        List<UserDetailResponse> content = userPage.getContent()
+                .stream()
+                .filter(user -> !user.getId().equals(userId))
+                .map(user -> UserDetailResponse.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .username(user.getUsername())
+                        .build())
+                .toList();
+
+        return PageResponse.<UserDetailResponse>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(userPage.getTotalPages())
+                .totalElements(userPage.getTotalElements())
+                .content(content)
+                .build();
     }
 
 }
