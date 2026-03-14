@@ -84,12 +84,18 @@ public class ConversationService {
     }
 
     public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1 , size);
+        Pageable pageable = PageRequest.of(page - 1, size);
 
         Page<Conversation> conversationPage = conversationRepository.findAllByUserId(userId, pageable);
-        List<Conversation> conversations = conversationPage.getContent();
+        
+        List<String> conversationIds = conversationPage.getContent().stream()
+                .map(Conversation::getId)
+                .toList();
 
-        List<ConversationDetailResponse> responses = conversations.stream()
+        List<Conversation> conversationsWithParticipants = conversationIds.isEmpty() ?
+                List.of() : conversationRepository.findByIdInWithParticipants(conversationIds);
+
+        List<ConversationDetailResponse> responses = conversationsWithParticipants.stream()
                 .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
                 .toList();
 
