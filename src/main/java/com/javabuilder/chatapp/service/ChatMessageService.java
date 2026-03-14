@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @Transactional(rollbackFor = Exception.class)
     public ChatMessageResponse sendChatMessage(String senderId, ChatMessageRequest request) {
@@ -64,7 +66,13 @@ public class ChatMessageService {
         conversation.setLastMessageTime(message.getSentAt());
         conversationRepository.save(conversation);
 
-        return ChatMessageResponse.builder()
+        List<String> recipientIds = conversation.getParticipants()
+                .stream()
+                .filter(participant -> !participant.getUser().getId().equals(senderId))
+                .map(participant -> participant.getUser().getId())
+                .toList();
+
+        ChatMessageResponse response = ChatMessageResponse.builder()
                 .id(message.getId())
                 .tempId(request.tempId())
                 .conversationId(message.getConversation().getId())
@@ -82,6 +90,10 @@ public class ChatMessageService {
                                 .build())
                         .toList())
                 .build();
+
+        recipientIds.forEach(recipientId -> simpMessagingTemplate.convertAndSendToUser(recipientId, "/queue/messages", response));
+
+        return response;
     }
 
     public PageResponse<ChatMessageResponse> getMessagesByConversationId(String conversationId, int page, int size) {
