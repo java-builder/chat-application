@@ -5,46 +5,53 @@ import com.javabuilder.chatapp.dto.response.ConversationDetailResponse;
 import com.javabuilder.chatapp.dto.response.CreateConversationResponse;
 import com.javabuilder.chatapp.dto.response.ParticipantResponse;
 import com.javabuilder.chatapp.entity.Conversation;
+import com.javabuilder.chatapp.service.UserSessionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-public final class ConversationMapper {
-    private ConversationMapper() {
-    }
+import java.time.Duration;
+import java.time.Instant;
 
-    public static CreateConversationResponse toConversationResponse(String creatorId, Conversation conversation) {
+@Component
+@RequiredArgsConstructor
+public class ConversationMapper {
+
+    private final UserSessionService userSessionService;
+
+    public CreateConversationResponse toConversationResponse(String creatorId, Conversation conversation) {
         ConversationType conversationType = conversation.getConversationType();
 
         CreateConversationResponse response = CreateConversationResponse.builder()
                 .id(conversation.getId())
                 .conversationType(conversationType)
                 .participantInfo(conversation.getParticipants().stream()
-                        .map(participants -> ParticipantResponse.builder()
-                                .userId(participants.getUser().getId())
-                                .username(participants.getUser().getUsername())
+                        .map(p -> ParticipantResponse.builder()
+                                .userId(p.getUser().getId())
+                                .username(p.getUser().getUsername())
                                 .build())
                         .toList())
                 .createdAt(conversation.getCreatedAt())
                 .build();
 
-        String name = resolveConversationName(creatorId, conversation);
-        response.setName(name);
+        response.setName(resolveConversationName(creatorId, conversation));
 
-        if (conversation.getConversationType() != ConversationType.PRIVATE) {
+        if (conversationType != ConversationType.PRIVATE) {
             response.setConversationAvatar(conversation.getConversationAvatar());
         }
 
         return response;
     }
 
-    public static ConversationDetailResponse toConversationDetailResponse(String creatorId, Conversation conversation) {
+    public ConversationDetailResponse toConversationDetailResponse(String creatorId, Conversation conversation) {
         ConversationType conversationType = conversation.getConversationType();
 
         ConversationDetailResponse response = ConversationDetailResponse.builder()
                 .id(conversation.getId())
                 .conversationType(conversationType)
-                .participantInfo( conversation.getParticipants().stream()
-                        .map(participants -> ParticipantResponse.builder()
-                                .userId(participants.getUser().getId())
-                                .username(participants.getUser().getUsername())
+                .participantInfo(conversation.getParticipants().stream()
+                        .map(p -> ParticipantResponse.builder()
+                                .userId(p.getUser().getId())
+                                .username(p.getUser().getUsername())
                                 .build())
                         .toList())
                 .lastMessageId(conversation.getLastMessageId())
@@ -53,26 +60,59 @@ public final class ConversationMapper {
                 .createdAt(conversation.getCreatedAt())
                 .build();
 
-        String name = resolveConversationName(creatorId, conversation);
-        response.setName(name);
+        response.setName(resolveConversationName(creatorId, conversation));
 
-        if (conversation.getConversationType() != ConversationType.PRIVATE) {
+        if (conversationType == ConversationType.PRIVATE) {
+            conversation.getParticipants().stream()
+                    .filter(p -> !p.getUser().getId().equals(creatorId))
+                    .findFirst()
+                    .ifPresent(p -> {
+                        String otherUserId = p.getUser().getId();
+                        boolean isOnline = userSessionService.isOnline(p.getUser().getId());
+                        String lastOnlineAt = userSessionService.getPresence(otherUserId)
+                                .map(presence -> formatLastOnlineAt(presence.getLastOnlineAt()))
+                                .orElse(null);
+
+                        response.setIsOnline(isOnline);
+                        response.setLastOnlineAt(lastOnlineAt);
+                    });
+        } else {
+            boolean anyOnline = conversation.getParticipants().stream()
+                    .filter(p -> !p.getUser().getId().equals(creatorId))
+                    .anyMatch(p -> userSessionService.isOnline(p.getUser().getId()));
+
+            response.setIsOnline(anyOnline);
+        }
+
+        if (conversationType != ConversationType.PRIVATE) {
             response.setConversationAvatar(conversation.getConversationAvatar());
         }
 
         return response;
     }
 
-    private static String resolveConversationName(String creatorId, Conversation conversation) {
+
+
+    private String resolveConversationName(String creatorId, Conversation conversation) {
         if (conversation.getConversationType() == ConversationType.PRIVATE) {
-            return conversation.getParticipants()
-                    .stream()
+            return conversation.getParticipants().stream()
                     .filter(p -> !p.getUser().getId().equals(creatorId))
                     .findFirst()
                     .map(p -> p.getUser().getUsername())
                     .orElse(null);
         }
         return conversation.getName();
+    }
+
+    private String formatLastOnlineAt(Instant lastOnlineAt) {
+        if (lastOnlineAt == null) return null;
+
+        long minutes = Duration.between(lastOnlineAt, Instant.now()).toMinutes();
+
+        if (minutes < 1)    return "Vừa hoạt động xong";
+        if (minutes < 60)   return "Hoạt động " + minutes + " phút trước";
+        if (minutes < 1440) return "Hoạt động " + (minutes / 60) + " giờ trước";
+        return "Hoạt động " + (minutes / 1440) + " ngày trước";
     }
 
 }

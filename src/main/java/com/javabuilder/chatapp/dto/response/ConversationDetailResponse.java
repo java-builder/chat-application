@@ -23,4 +23,6 @@ public class ConversationDetailResponse {
     private String lastMessageContent;
     private LocalDateTime lastMessageTime;
     private LocalDateTime createdAt;
+    private Boolean isOnline;
+    private String lastOnlineAt;
 }

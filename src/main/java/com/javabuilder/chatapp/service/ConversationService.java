@@ -29,6 +29,7 @@ public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
+    private final ConversationMapper conversationMapper;
 
     public CreateConversationResponse createConversation(String creatorId, CreateConversationRequest request) {
         List<String> participantIds = request.participantIds();
@@ -57,7 +58,7 @@ public class ConversationService {
 
             Optional<Conversation> existing = conversationRepository.findByParticipantHash(participantHash);
             if (existing.isPresent()) {
-                return ConversationMapper.toConversationResponse(creatorId, existing.get());
+                return conversationMapper.toConversationResponse(creatorId, existing.get());
             }
         }
 
@@ -80,7 +81,7 @@ public class ConversationService {
         participantInfos.forEach(conversation::addParticipants);
         conversationRepository.save(conversation);
 
-        return ConversationMapper.toConversationResponse(creatorId, conversation);
+        return conversationMapper.toConversationResponse(creatorId, conversation);
     }
 
     public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
@@ -96,7 +97,7 @@ public class ConversationService {
                 List.of() : conversationRepository.findByIdInWithParticipants(conversationIds);
 
         List<ConversationDetailResponse> responses = conversationsWithParticipants.stream()
-                .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
+                .map(conversation -> conversationMapper.toConversationDetailResponse(userId, conversation))
                 .toList();
 
         return PageResponse.<ConversationDetailResponse>builder()
