@@ -25,6 +25,8 @@ export interface ConversationDetailResponse {
   lastMessageContent: string | null;
   lastMessageTime: string | null;
   createdAt: string;
+  isOnline: boolean;
+  lastOnlineAt: string | null;
 }
 
 export interface MessageMediaResponse {

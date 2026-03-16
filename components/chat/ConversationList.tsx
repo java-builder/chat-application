@@ -4,6 +4,7 @@ import { Box, List, ListItemButton, ListItemAvatar, Avatar, ListItemText, Typogr
 import { ConversationDetailResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
 
 interface ConversationListProps {
   conversations: ConversationDetailResponse[];
@@ -18,9 +19,23 @@ export default function ConversationList({
   onSelect,
   loading = false,
 }: ConversationListProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const getConversationName = (conv: ConversationDetailResponse) => {
     if (conv.name) return conv.name;
     return conv.participantInfo?.map(p => p.username).join(', ') || 'Conversation';
+  };
+
+  const formatTime = (timeString: string) => {
+    if (!isMounted) return '';
+    return formatDistanceToNow(new Date(timeString), {
+      addSuffix: false,
+      locale: vi,
+    }).replace('khoảng ', '');
   };
 
   if (loading) {
@@ -40,7 +55,7 @@ export default function ConversationList({
           onClick={() => onSelect(conv.id)}
           sx={{
             px: 2,
-            py: 1,
+            py: 1.5,
             borderRadius: 1,
             mx: 1,
             mb: 0.5,
@@ -60,62 +75,86 @@ export default function ConversationList({
               src={conv.conversationAvatar || undefined}
               sx={{
                 bgcolor: '#5865f2',
-                width: 36,
-                height: 36,
-                fontSize: '0.9rem',
+                width: 40,
+                height: 40,
+                fontSize: '1rem',
               }}
             >
               {getConversationName(conv)[0]?.toUpperCase()}
             </Avatar>
           </ListItemAvatar>
           <ListItemText
+            sx={{ my: 0 }}
             primary={
-              <Typography
-                component="span"
-                sx={{
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  display: 'block',
-                }}
-              >
-                {getConversationName(conv)}
-              </Typography>
-            }
-            secondary={
-              <Box component="span" sx={{ display: 'block' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography
                   component="span"
                   sx={{
-                    color: '#b9bbbe',
-                    fontSize: '0.8125rem',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '1rem',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    display: 'block',
+                    flex: 1,
+                    lineHeight: 1.2,
                   }}
                 >
-                  {conv.lastMessageContent || 'Chưa có tin nhắn'}
+                  {getConversationName(conv)}
                 </Typography>
                 {conv.lastMessageTime && (
                   <Typography
                     component="span"
                     sx={{
                       color: '#72767d',
-                      fontSize: '0.6875rem',
-                      mt: 0.25,
-                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: 400,
+                      ml: 1,
+                      flexShrink: 0,
                     }}
                   >
-                    {formatDistanceToNow(new Date(conv.lastMessageTime), {
-                      addSuffix: true,
-                      locale: vi,
-                    })}
+                    {formatTime(conv.lastMessageTime)}
                   </Typography>
                 )}
+              </Box>
+            }
+            secondary={
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: '#b9bbbe',
+                    fontSize: '0.875rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flex: 1,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {conv.lastMessageContent || 'Chưa có tin nhắn'}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1, flexShrink: 0 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: conv.isOnline ? '#23a55a' : '#80848e',
+                    }}
+                  />
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: conv.isOnline ? '#23a55a' : '#80848e',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {conv.isOnline ? 'Online' : 'Offline'}
+                  </Typography>
+                </Box>
               </Box>
             }
           />

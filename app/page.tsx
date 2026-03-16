@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Divider, IconButton } from '@mui/material';
 import { Add, Menu as MenuIcon } from '@mui/icons-material';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { conversationService } from '@/services/conversation.service';
 import { messageService } from '@/services/message.service';
 import { ConversationDetailResponse, ChatMessageResponse, MessageType } from '@/types';
@@ -26,6 +27,13 @@ export default function HomePage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
+
+  // Connect WebSocket và subscribe
+  useWebSocket((message: ChatMessageResponse) => {
+    if (selectedConversation && message.conversationId === selectedConversation) {
+      setMessages((prev) => [...prev, message]);
+    }
+  });
 
   // Load conversations
   useEffect(() => {
@@ -183,6 +191,27 @@ export default function HomePage() {
               <Typography sx={{ color: '#b9bbbe', fontSize: '0.8125rem' }}>
                 {selectedConv.participantInfo?.length} thành viên
               </Typography>
+              {/* Online status */}
+              <Divider orientation="vertical" flexItem sx={{ borderColor: '#202225', mx: 1 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    backgroundColor: selectedConv.isOnline ? '#23a55a' : '#80848e',
+                    border: '2px solid #36393f',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <Typography sx={{ 
+                  color: selectedConv.isOnline ? '#23a55a' : '#b9bbbe', 
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}>
+                  {selectedConv.isOnline ? 'Đang hoạt động' : selectedConv.lastOnlineAt || 'Không hoạt động'}
+                </Typography>
+              </Box>
             </>
           )}
         </Box>
